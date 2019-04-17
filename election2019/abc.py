@@ -60,8 +60,8 @@ def build_electorates():
 
     for electorate in electorates_cells:
         siblings = list(electorate.next_siblings)
-        parent_siblings = list(electorates_cells[
-                                   0].parent.parent.parent.previous_siblings)
+        parent_siblings = list(electorate
+                               .parent.parent.parent.previous_siblings)
         state = parent_siblings[1].text
         electorate_url = urljoin(f"https://{root_domain}",
                                  electorate.a['href'])
