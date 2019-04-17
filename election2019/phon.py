@@ -10,7 +10,10 @@ logger = logging.getLogger("election2019")
 
 driver = webdriver.Firefox()
 driver.get("https://www.onenation.org.au/our-team/")
+
+# Wait for human captcha input
 sleep(120)
+
 page_html = driver.execute_script("return document.documentElement.outerHTML")
 driver.close()
 page_soup = BeautifulSoup(page_html, "html.parser")
