@@ -6,7 +6,7 @@ import time
 logger = logging.getLogger("election2019")
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.FileHandler(f"logs/{int(time.time())}.log"))
-logger.addHandler(logging.StreamHandler(sys.stdout))
+# logger.addHandler(logging.StreamHandler(sys.stdout))
 
 state_lookup = {
     "New South Wales": "NSW",
