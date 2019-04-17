@@ -25,7 +25,7 @@ def scrape_candidates_pages(candidates):
         candidate_page_soup = BeautifulSoup(
             requests.get(urljoin(root_url, candidate_link)).text,
             "html.parser")
-        sleep(5)
+        sleep(1)
 
         candidate_name = candidate_page_soup.h1.text.strip()
         logger.info(f"\n{candidate_name}")
