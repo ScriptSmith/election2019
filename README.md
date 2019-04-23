@@ -6,11 +6,10 @@ Jupyter notebook that automates the scraping of Twitter, Facebook, and Instagram
 
 |Source    |Accounts|
 |----------|--------|
-|twitter   |188     |
-|facebook  |551     |
-|instagram |113     |
-|website   |328     |
-|**total** |**685** |
+|twitter   |192     |
+|facebook  |550     |
+|instagram |117     |
+|**total** |**707** |
 
 Results are stored in [output/](output/)
 
