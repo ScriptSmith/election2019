@@ -38,7 +38,9 @@ ignored_accounts = ["australianlabor", "liberalaus", "greens",
                     "thegreenswa", "sharer.php", "vic_socialists",
                     "realbobkatter", "vicsocialists", "vic_socialists",
                     "westernaustraliapartywa", "westausparty",
-                    "westernaustraliaparty", "austfirstparty"]
+                    "westernaustraliaparty", "austfirstparty",
+                    "animaljusticeau", "animaljusticepartyofficial",
+                    "animaljusticeparty"]
 
 with open("ignored_websites", 'r') as f:
     ignored_websites = [line.strip() for line in f.readlines()]
@@ -61,6 +63,11 @@ def verify_url(base_url: str, test_url: str):
 
     if base_domain == test_domain:
         account_split = urlparse(test_url).path.lower().split("/")
+
+        # Catch facebook post links
+        if "photos" in account_split or "photos" in account_split:
+            return ""
+
         account = account_split[-2] if not account_split[-1] else account_split[
             -1]
         if account not in ignored_accounts:
