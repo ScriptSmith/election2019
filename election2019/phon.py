@@ -12,7 +12,7 @@ driver = webdriver.Firefox()
 driver.get("https://www.onenation.org.au/our-team/")
 
 # Wait for human captcha input
-sleep(120)
+sleep(30)
 
 page_html = driver.execute_script("return document.documentElement.outerHTML")
 driver.close()
