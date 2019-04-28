@@ -7,10 +7,12 @@ import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm_notebook
 
-from .main import state_lookup, is_ignored, verify_all, \
-    verify_twitter, verify_facebook, verify_instagram, search_page_links
+from .main import set_candidate, state_abbr, is_ignored, verify_all, \
+    verify_twitter, verify_facebook, verify_instagram, search_page_links, \
+    candidate_exists
 
 logger = logging.getLogger("election2019")
+logger.info("Searching abc")
 
 root_url = "https://www.abc.net.au/news/elections/federal/2019/guide/"
 root_domain = urlparse(root_url).netloc
@@ -26,33 +28,20 @@ electorates_soup = BeautifulSoup(requests.get(electorates_url).text,
 electorates_cells = electorates_soup.find_all("td", class_="electorate")
 
 
-def build_candidates():
-    candidates_data = {}
-    candidate_names = []
-
-    for candidate in candidates_cells:
-        contents = candidate.contents
-        siblings = list(candidate.next_siblings)
+def build_candidates(candidates):
+    for candidate_cell in candidates_cells:
+        contents = candidate_cell.contents
+        siblings = list(candidate_cell.next_siblings)
 
         first_name = str(contents[0].string).strip()
         family_name = str(contents[1].string)
         full_name = f"{first_name} {family_name}"
-        candidate_names.append(full_name)
+        electorate = siblings[3].a.string.replace("Senate - ", "").replace(
+            " (*)", "").replace("A.C.T.", "Australian Capital Territory")
 
-        candidates_data[full_name] = OrderedDict({
-            "first_name": first_name,
-            "family_name": family_name,
-            "party": siblings[1].span.string,
-            "electorate": siblings[3].a.string,
-            "sitting": len(contents) == 4,
-            "website": "",
-            "twitter": "",
-            "facebook": "",
-            "instagram": ""
-        })
-
-    assert len(candidate_names) == len(set(candidate_names))
-    return pd.DataFrame.from_dict(candidates_data, orient="index")
+        # Identify if sitting
+        set_candidate(candidates, full_name, electorate, "sitting",
+                      len(contents) == 4)
 
 
 def build_electorates():
@@ -70,7 +59,7 @@ def build_electorates():
 
         electorates_data[electorate_name] = OrderedDict({
             "name": electorate_name,
-            "state": state_lookup[state],
+            "state": state_abbr[state],
             "url": electorate_url,
             "party": siblings[1].text,
             "margin": float(siblings[3].text)
@@ -84,6 +73,8 @@ def scrape_candidate_websites(electorates, candidates):
     for index, electorate in tqdm_notebook(rows, total=len(rows)):
         electorate_soup = BeautifulSoup(requests.get(electorate["url"]).text,
                                         "html.parser")
+        electorate_name = electorate_soup.h1.text.replace(" (Key Seat)", "")
+
         electorate_candidate_cells = \
             electorate_soup.find_all("div", class_="eg-electorate-bio")
 
@@ -97,20 +88,22 @@ def scrape_candidate_websites(electorates, candidates):
 
             candidate_website = candidate_cell.a['href']
 
-            if candidate_name not in candidates.index:
+            if not candidate_exists(candidates, candidate_name,
+                                    electorate_name):
                 logger.error(f"Couldn't find candidate {candidate_name}")
                 continue
             elif is_ignored(candidate_website) or verify_all(candidate_website):
                 logger.info(f"Ignoring {candidate_website}")
                 continue
 
-            candidates.at[candidate_name, "website"] = candidate_website
-            candidates.at[candidate_name, "twitter"] = verify_twitter(
-                candidate_website)
-            candidates.at[candidate_name, "facebook"] = verify_facebook(
-                candidate_website)
-            candidates.at[candidate_name, "instagram"] = verify_instagram(
-                candidate_website)
+            set_candidate(candidates, candidate_name, electorate_name,
+                          "website", candidate_website)
+            set_candidate(candidates, candidate_name, electorate_name,
+                          "twitter", verify_twitter(candidate_website))
+            set_candidate(candidates, candidate_name, electorate_name,
+                          "facebook", verify_facebook(candidate_website))
+            set_candidate(candidates, candidate_name, electorate_name,
+                          "instagram", verify_instagram(candidate_website))
 
             try:
                 candidate_website_raw = requests.get(candidate_website)
@@ -123,4 +116,5 @@ def scrape_candidate_websites(electorates, candidates):
             candidate_website_soup = BeautifulSoup(candidate_website_raw.text,
                                                    "html.parser")
             links = candidate_website_soup.find_all("a")
-            search_page_links(candidate_name, candidates, links)
+            search_page_links(candidate_name, electorate_name, candidates,
+                              links)

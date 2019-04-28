@@ -5,9 +5,10 @@ import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm_notebook
 
-from election2019.main import search_page_links
+from election2019.main import search_page_links, candidate_exists
 
 logger = logging.getLogger("election2019")
+logger.info("Searching uap")
 
 candidate_data = requests.get(
     "https://www.unitedaustraliaparty.org.au/wp-admin/admin-ajax.php?action="
@@ -29,9 +30,11 @@ def scrape_candidates_pages(candidates):
         candidate_name = candidate_soup.h1.text
         logger.info(f"\n{candidate_name}")
 
-        if candidate_name not in candidates.index:
+        electorate = candidate['value']['electoraldivision']
+
+        if not candidate_exists(candidates, candidate_name, electorate):
             logger.error(f"Couldn't find candidate {candidate_name}")
             continue
 
-        search_page_links(candidate_name, candidates,
+        search_page_links(candidate_name, electorate, candidates,
                           candidate_soup.select(".c_social a"))
